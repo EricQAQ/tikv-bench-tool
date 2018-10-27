@@ -39,6 +39,9 @@ const report =
 	"==========================\n" +
 	"Success: %d, Failed: %d, Success Rate: %f\n"
 
+var wg sync.WaitGroup
+
+
 func makeData(kb int) *[]byte {
 	data := make([]byte, kb * 1024)
 	for i := 0; i < kb * 1024; i++ {
@@ -53,7 +56,6 @@ type BenchClient struct {
 	total  int
 	worker int
 	chCnt chan int
-	wg sync.WaitGroup
 	clientType string
 	size int
 	value *[]byte
@@ -202,7 +204,7 @@ func (client *BenchClient) getTask() {
 }
 
 func (client *BenchClient) deferTask() {
-	client.wg.Wait()
+	wg.Wait()
 	client.benchBar.Finish()
 
 	if client.clientType == "raw" {
@@ -215,13 +217,13 @@ func (client *BenchClient) deferTask() {
 		client.timeRange[4], client.timeRange[5],
 		client.timeRange[6], client.timeRange[7],
 		client.timeRange[8], client.succ_fail[0],
-		client.succ_fail[1], client.succ_fail[0] / client.total,
+		client.succ_fail[1], float32(client.succ_fail[0]) / float32(client.total),
 	)
 }
 
 func (client *BenchClient) doTask() {
-	client.wg.Add(1)
-	defer client.wg.Done()
+	wg.Add(1)
+	defer wg.Done()
 
 	for range client.chCnt {
 		switch client.cmd {
