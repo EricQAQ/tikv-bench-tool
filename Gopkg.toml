@@ -1,0 +1,13 @@
+[[constraint]]
+  name = "gopkg.in/cheggaaa/pb.v2"
+
+[[constraint]]
+  name = "github.com/docopt/docopt-go"
+
+[[constraint]]
+  name = "github.com/pingcap/tidb"
+  version = "v2.1.0-rc.1"
+
+[prune]
+  go-tests = true
+  unused-packages = true
