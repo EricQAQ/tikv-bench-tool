@@ -204,7 +204,6 @@ func (client *BenchClient) getTask() {
 }
 
 func (client *BenchClient) deferTask() {
-	wg.Wait()
 	client.benchBar.Finish()
 
 	if client.clientType == "raw" {
@@ -222,7 +221,6 @@ func (client *BenchClient) deferTask() {
 }
 
 func (client *BenchClient) doTask() {
-	wg.Add(1)
 	defer wg.Done()
 
 	for range client.chCnt {
@@ -241,6 +239,8 @@ func (client *BenchClient) StartBench() {
 	go client.getTask()
 
 	for i := 0; i < client.worker; i++ {
+		wg.Add(1)
 		go client.doTask()
 	}
+	wg.Wait()
 }
