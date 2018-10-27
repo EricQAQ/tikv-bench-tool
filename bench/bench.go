@@ -25,7 +25,7 @@ const pbFmt = "{{ red \"%s\" }} " +
 	"Count: {{ counters . | magenta }} " +
 	"Percent: {{ percent . | white }}"
 const report =
-	"Finished Bench Test. \nTotal: %d requests, \nWorkers: %d\n, Each value size: %d\n" +
+	"Finished Bench Test. \nTotal: %d requests.\nWorkers: %d.\nEach value size: %d.\n" +
 	"==========================\n" +
 	" 0 ~ 3ms		: %d\n" +
 	" 3 ~ 5ms		: %d\n" +
@@ -35,7 +35,8 @@ const report =
 	"20 ~ 30ms		: %d\n" +
 	"30 ~ 50ms		: %d\n" +
 	"50 ~ 500ms		: %d\n" +
-	"500~ ms		: %d\n" +
+	"500~ max ms	: %d\n" +
+	"==========================\n" +
 	"Success: %d, Failed: %d, Success Rate: %f\n"
 
 func makeData(kb int) *[]byte {
@@ -76,7 +77,7 @@ func NewBenchClient(url string, total, worker, size int, clientType, cmd string)
 		succ_fail: []int{0, 0},
 		benchBar: pb.ProgressBarTemplate(fmt.Sprintf(pbFmt, "TiBenchmark")).Start(total),
 	}
-	c.OpenTikv(fmt.Sprintf(TIKV_URL, url))
+	c.OpenTikv(url)
 	return &c
 }
 
@@ -87,7 +88,7 @@ func (client *BenchClient) OpenTikv(tikvURL string) {
 		client.tikvRawClient = store
 	} else {
 		driver := tikv.Driver{}
-		store, err := driver.Open(tikvURL)
+		store, err := driver.Open(fmt.Sprintf(TIKV_URL, tikvURL))
 		terror.MustNil(err)
 		client.tikvTransClient = store
 	}
