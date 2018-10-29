@@ -6,6 +6,13 @@ The missing TiKV benchmark command line tool. It ONLY support GET and SET Operat
 
 ![report](./images/report.jpg)
 
+## Install
+
+1. git clone this repo
+2. make install
+
+## Usage
+
 ```
 Usage:
     tibench [--pd-addr=<pd_addr>] [--op=<op>] [--total=<total>] [--worker=<worker_number>] [--data-size=<data_size>] [--client-type=<client_type>]
