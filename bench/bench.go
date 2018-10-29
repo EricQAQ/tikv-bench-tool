@@ -34,7 +34,7 @@ const report =
 	"20 ~ 30ms		: %d\n" +
 	"30 ~ 50ms		: %d\n" +
 	"50 ~ 500ms		: %d\n" +
-	"500~ max ms	: %d\n" +
+	"500~ max ms		: %d\n" +
 	"==========================\n" +
 	"Success: %d, Failed: %d, Success Rate: %f\n"
 
