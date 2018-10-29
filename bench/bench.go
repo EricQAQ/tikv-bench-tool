@@ -123,49 +123,56 @@ func (client *BenchClient) updateTimeRange(duration int64) {
 	}
 }
 
-func (client *BenchClient) opInTxn(fn func(txn kv.Transaction) (interface{}, error), write bool) {
+func (client *BenchClient) opInTxn(fn func(txn kv.Transaction) (interface{}, error), write bool) error {
 	txn, err := client.tikvTransClient.Begin()
 	if err != nil {
 		client.succ_fail[1]++
-		return
+		return err
 	}
 	if _, err = fn(txn); err != nil {
 		client.succ_fail[1]++
-		return
+		return err
 	}
 	if !write {
 		client.succ_fail[0]++
-		return
+		return nil
 	}
 	if err = txn.Commit(context.Background()); err != nil {
 		txn.Rollback()
 		client.succ_fail[1]++
-		return
+		return err
 	}
 	client.succ_fail[0]++
+	return nil
 }
 
 func (client *BenchClient) rawGet() {
 	_, err := client.tikvRawClient.Get(client.randomKey())
 	if err != nil {
 		client.succ_fail[1]++
+		fmt.Println(err)
 		return
 	}
+	client.succ_fail[0]++
 }
 
 func (client *BenchClient) transGet() {
 	fn := func(txn kv.Transaction) (interface{}, error) {
 		return txn.Get(client.randomKey())
 	}
-	client.opInTxn(fn, false)
+	if err := client.opInTxn(fn, false); err != nil {
+		fmt.Println(err)
+	}
 }
 
 func (client *BenchClient) rawSet() {
 	err := client.tikvRawClient.Put(client.randomKey(), *client.value)
 	if err != nil {
 		client.succ_fail[1]++
+		fmt.Println(err)
 		return
 	}
+	client.succ_fail[0]++
 }
 
 func (client *BenchClient) transSet() {
@@ -173,7 +180,9 @@ func (client *BenchClient) transSet() {
 		err := txn.Set(client.randomKey(), *client.value)
 		return nil, err
 	}
-	client.opInTxn(fn, true)
+	if err := client.opInTxn(fn, true); err != nil {
+		fmt.Println(err)
+	}
 }
 
 func (client *BenchClient) benchGet() {
@@ -185,7 +194,6 @@ func (client *BenchClient) benchGet() {
 	}
 	duration := time.Now().UnixNano() / 1e6 - startTs
 	client.updateTimeRange(duration)
-	client.succ_fail[0]++
 }
 
 func (client *BenchClient) benchSet() {
@@ -197,7 +205,6 @@ func (client *BenchClient) benchSet() {
 	}
 	duration := time.Now().UnixNano() / 1e6 - startTs
 	client.updateTimeRange(duration)
-	client.succ_fail[0]++
 }
 
 func (client *BenchClient) getTask() {
