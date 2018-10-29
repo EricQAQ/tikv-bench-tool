@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sync"
 	"math/rand"
-	"strconv"
 	"strings"
 	"time"
 	"context"
@@ -97,7 +96,8 @@ func (client *BenchClient) OpenTikv(tikvURL string) {
 }
 
 func (client *BenchClient) randomKey() []byte {
-	return []byte(strconv.Itoa(rand.Int()))
+	b := make([]byte, 8)
+	return EncodeInt(b, int64(rand.Int()))
 }
 
 func (client *BenchClient) updateTimeRange(duration int64) {
@@ -123,18 +123,22 @@ func (client *BenchClient) updateTimeRange(duration int64) {
 	}
 }
 
-func (client *BenchClient) opInTxn(fn func(txn kv.Transaction) (interface{}, error)) {
+func (client *BenchClient) opInTxn(fn func(txn kv.Transaction) (interface{}, error), write bool) {
 	txn, err := client.tikvTransClient.Begin()
 	if err != nil {
 		client.succ_fail[1]++
 		return
 	}
 	if _, err = fn(txn); err != nil {
-		txn.Rollback()
 		client.succ_fail[1]++
 		return
 	}
+	if !write {
+		client.succ_fail[0]++
+		return
+	}
 	if err = txn.Commit(context.Background()); err != nil {
+		txn.Rollback()
 		client.succ_fail[1]++
 		return
 	}
@@ -153,7 +157,7 @@ func (client *BenchClient) transGet() {
 	fn := func(txn kv.Transaction) (interface{}, error) {
 		return txn.Get(client.randomKey())
 	}
-	client.opInTxn(fn)
+	client.opInTxn(fn, false)
 }
 
 func (client *BenchClient) rawSet() {
@@ -169,7 +173,7 @@ func (client *BenchClient) transSet() {
 		err := txn.Set(client.randomKey(), *client.value)
 		return nil, err
 	}
-	client.opInTxn(fn)
+	client.opInTxn(fn, true)
 }
 
 func (client *BenchClient) benchGet() {
